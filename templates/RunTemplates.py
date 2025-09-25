@@ -13,6 +13,9 @@ import json
 # from tdrStyle import *
 import random #-*-*-*-*-*-*-*-*-*-*-*-* Temporary - since we do not have discriminantsa in data yet, we perform a random generation -*-*-*-*-*-*-*-*-*-*-*-*
 
+import sys
+sys.path.append('../helperstuff/')
+
 from observables import observables
 from binning import binning
 from paths import path
@@ -232,7 +235,7 @@ def openFR(year):
         fnameFR = "/eos/user/l/lurda/CMS/HZZ/XS_analysis/250303/FAKERATES/%s/FakeRates_SS_%s.root" % (year, year)
     else:
         raise ValueError(f"ERROR: Unsupported year")
-    #fnameFR = "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/RunIII/FRfiles/FakeRates_SS_%s.root" %year
+    fnameFR = "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/RunIII_byZ1Z2/FRfiles/FakeRates_SS_%s.root" %year
     #else: fnameFR = "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/RunIII/FRfiles/FakeRates_SS_2022.root" # SPENCER FIX THIS
 
     if not os.path.exists(fnameFR):
@@ -384,11 +387,12 @@ def doZX(year, year_mc):
     #if (year=="2023preBPix"): data = '/eos/home-s/sellissp/HZZ/SAMPLES/032025/2023_Data/Data_eraC_preBPix_SKIMMED.root'
     #if (year=="2023postBPix"): data = '/eos/home-s/sellissp/HZZ/SAMPLES/032025/2023_Data/Data_eraD_postBPix_SKIMMED.root'
     # /eos/user/m/mmanoni/HZZ_prod_300425_angles/ production for only angular variables
-    if (year=="2023preBPix"): data = '/eos/user/m/mmanoni/HZZ_prod_300425_angles/Data/2023/Data_eraC_preBPix_SKIMMED.root'
-    if (year=="2023postBPix"): data = '/eos/user/m/mmanoni/HZZ_prod_300425_angles/Data/2023/Data_eraD_postBPix_SKIMMED.root'
-    if (year=="2022"): data = '/eos/user/m/mmanoni/HZZ_prod_300425_angles/Data/2022/Data_eraCD_preEE_SKIMMED.root'
-    if (year=="2022EE"): data = '/eos/user/m/mmanoni/HZZ_prod_300425_angles/Data/2022/Data_eraEFG_postEE_SKIMMED.root'
-    
+    if (year=="2023preBPix"): data = '/eos/user/m/mmanoni/HZZ_prod_170625/Data/2023/Data_eraC_preBPix_SKIMMED.root'
+    if (year=="2023postBPix"): data = '/eos/user/m/mmanoni/HZZ_prod_170625/Data/2023/Data_eraD_postBPix_SKIMMED.root'
+    if (year=="2022"): data = '/eos/user/m/mmanoni/HZZ_prod_170625/Data/2022/Data_eraCD_preEE_SKIMMED.root'
+    if (year=="2022EE"): data = '/eos/user/m/mmanoni/HZZ_prod_170625/Data/2022/Data_eraEFG_postEE_SKIMMED.root'
+    data = '/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/RunIII_byZ1Z2/240820/'+year_mc+'/Data/AllData_'+year_mc+'.root'
+
     ttreeZX = uproot.open(data)[keyZX]
     ttreeZX = ttreeZX.arrays(branches_ZX, library="np")
     dfZX = pd.DataFrame(columns=branches_ZX)
@@ -710,7 +714,7 @@ if (opt.YEAR == '2023full'):
     d_bkg['2023postBPix'] = d_bkg_tmp['2023postBPix']
     
 # Generate pandas for ZX
-branches_ZX = ['ZZMass', 'Z1Flav', 'Z2Flav', 'LepLepId', 'LepEta', 'LepPt', 'Z2Mass', 'Z1Mass', 'ZZPt', 'ZZy', 'pTj1', 'pTj2', 'Nj', 'absdetajj', 'mjj', 'dphijj', 'pTHj', 'pTHjj', 'mHj', 'costheta1', 'costheta2', 'Phi', 'Phi1', 'costhetastar']
+branches_ZX = ['ZZMass', 'Z1Flav', 'Z2Flav', 'LepLepId', 'LepEta', 'LepPt', 'Z2Mass', 'Z1Mass', 'ZZPt'] #, 'ZZy', 'pTj1', 'pTj2', 'Nj', 'absdetajj', 'mjj', 'dphijj', 'pTHj', 'pTHjj', 'mHj', 'costheta1', 'costheta2', 'Phi', 'Phi1', 'costhetastar']
 
 dfZX={}
 for year, year_mc in zip(years, years_MC):

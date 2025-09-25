@@ -1,6 +1,6 @@
 ### ------- lxplus -------
 path = {
-'eos_path_sig': '/eos/user/m/mmanoni/HZZ_prod_300425_angles/',
+'eos_path_sig': '/eos/user/m/mmanoni/HZZ_prod_170625/',
 'eos_path': '/eos/user/m/mmanoni/',
 'eos_path_FR': '/eos/user/m/mmanoni/HZZ_FIDUCIAL/',
 }

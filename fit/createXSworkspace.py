@@ -169,7 +169,7 @@ def createXSworkspace(obsName, channel, nBins, obsBin, observableBins, addfakeH,
 
     print(os.getcwd())
 
-    massParaMap = readParam('/afs/cern.ch/user/m/mmanoni/FiducialXS/CMSSW_14_1_0_pre4/src/FiducialXSFWK/fit/param/sim_massParam_ggH_105160_'+channel+'_'+year+'.txt')
+    massParaMap = readParam('/eos/user/c/csammora/CMSSW_14_1_0_pre4/src/FiducialXSFWK/fit/param/sim_massParam_ggH_105160_'+channel+'_'+year+'.txt')
                 
     CMS_zz4l_mean_m_sig = ROOT.RooRealVar("CMS_zz4l_mean_m_sig","CMS_zz4l_mean_m_sig",-10,10)
     CMS_zz4l_mean_e_sig = ROOT.RooRealVar("CMS_zz4l_mean_e_sig","CMS_zz4l_mean_e_sig",-10,10)
@@ -1019,10 +1019,10 @@ def createXSworkspace(obsName, channel, nBins, obsBin, observableBins, addfakeH,
 
     # Data Obs
     #data_obs_file = ROOT.TFile("/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/RunIII_byZ1Z2/240820/"+year+"/Data/reducedTree_AllData_"+year+".root")
-    if (year=="2022"): data_obs_file =  ROOT.TFile("/eos/user/m/mmanoni/HZZ_prod_300425_angles/Data/2022/Data_eraCD_preEE_SKIMMED.root")
-    if (year=="2022EE"): data_obs_file =  ROOT.TFile("/eos/user/m/mmanoni/HZZ_prod_300425_angles/Data/2022/Data_eraEFG_postEE_SKIMMED.root")
-    if (year=="2023preBPix"): data_obs_file =  ROOT.TFile("/eos/user/m/mmanoni/HZZ_prod_300425_angles/Data/2023/Data_eraC_preBPix_SKIMMED.root")
-    if (year=="2023postBPix"): data_obs_file =  ROOT.TFile("/eos/user/m/mmanoni/HZZ_prod_300425_angles/Data/2023/Data_eraD_postBPix_SKIMMED.root")
+    if (year=="2022"): data_obs_file =  ROOT.TFile("/eos/user/m/mmanoni/HZZ_prod_170625/Data/2022/Data_eraCD_preEE_SKIMMED.root")
+    if (year=="2022EE"): data_obs_file =  ROOT.TFile("/eos/user/m/mmanoni/HZZ_prod_170625/Data/2022/Data_eraEFG_postEE_SKIMMED.root")
+    if (year=="2023preBPix"): data_obs_file =  ROOT.TFile("/eos/user/m/mmanoni/HZZ_prod_170625/Data/2023/Data_eraC_preBPix_SKIMMED.root")
+    if (year=="2023postBPix"): data_obs_file =  ROOT.TFile("/eos/user/m/mmanoni/HZZ_prod_170625/Data/2023/Data_eraD_postBPix_SKIMMED.root")
     #data_obs_tree = data_obs_file.Get("SR")
     data_obs_tree = data_obs_file.Get("ZZTree/candTree")
 

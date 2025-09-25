@@ -715,27 +715,27 @@ for i in range(nBins):
         obs_do_sys = np.sqrt(obs_nom[2]**2 - obs_nom_stat[2]**2)
 
     #For v3 model we multiply by the expected th xs
-    if 'smH' in _obs_bin:
-        exp_nom = list(exp_nom)
-        exp_nom_stat = list(exp_nom_stat)
-        exp_nom[0] *= xsec['SigmaBin'+str(i)]
-        exp_nom[1] *= xsec['SigmaBin'+str(i)]
-        exp_nom[2] *= xsec['SigmaBin'+str(i)]
-        exp_nom_stat[1] *= xsec['SigmaBin'+str(i)]
-        exp_nom_stat[2] *= xsec['SigmaBin'+str(i)]
-        exp_up_sys *= xsec['SigmaBin'+str(i)]
-        exp_do_sys *= xsec['SigmaBin'+str(i)]
+    # if 'smH' in _obs_bin:
+    #     exp_nom = list(exp_nom)
+    #     exp_nom_stat = list(exp_nom_stat)
+    #     exp_nom[0] *= xsec['SigmaBin'+str(i)]
+    #     exp_nom[1] *= xsec['SigmaBin'+str(i)]
+    #     exp_nom[2] *= xsec['SigmaBin'+str(i)]
+    #     exp_nom_stat[1] *= xsec['SigmaBin'+str(i)]
+    #     exp_nom_stat[2] *= xsec['SigmaBin'+str(i)]
+    #     exp_up_sys *= xsec['SigmaBin'+str(i)]
+    #     exp_do_sys *= xsec['SigmaBin'+str(i)]
 
-        if opt.UNBLIND:
-            obs_nom = list(obs_nom)
-            obs_nom_stat = list(obs_nom_stat)
-            obs_nom[0] *= xsec['SigmaBin'+str(i)]
-            obs_nom[1] *= xsec['SigmaBin'+str(i)]
-            obs_nom[2] *= xsec['SigmaBin'+str(i)]
-            obs_nom_stat[1] *= xsec['SigmaBin'+str(i)]
-            obs_nom_stat[2] *= xsec['SigmaBin'+str(i)]
-            obs_up_sys *= xsec['SigmaBin'+str(i)]
-            obs_do_sys *= xsec['SigmaBin'+str(i)]
+    #     if opt.UNBLIND:
+    #         obs_nom = list(obs_nom)
+    #         obs_nom_stat = list(obs_nom_stat)
+    #         obs_nom[0] *= xsec['SigmaBin'+str(i)]
+    #         obs_nom[1] *= xsec['SigmaBin'+str(i)]
+    #         obs_nom[2] *= xsec['SigmaBin'+str(i)]
+    #         obs_nom_stat[1] *= xsec['SigmaBin'+str(i)]
+    #         obs_nom_stat[2] *= xsec['SigmaBin'+str(i)]
+    #         obs_up_sys *= xsec['SigmaBin'+str(i)]
+    #         obs_do_sys *= xsec['SigmaBin'+str(i)]
 
     if(opt.UNBLIND):
         Text3 = TPaveText(0.15, 0.81,0.4,0.9,'brNDC')

@@ -1,3 +1,7 @@
+cmsenv
+export PYTHONPATH="${PYTHONPATH}:<PATH_TO>/FiducialXSFWK/inputs"
+export PYTHONPATH="${PYTHONPATH}:<PATH_TO>/FiducialXSFWK/helperstuff"
+
 export base_path=$PWD
 export transfer_input_files=$PWD/coefficients/RunCoefficients.py
 echo $base_path;

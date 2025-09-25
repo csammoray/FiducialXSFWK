@@ -14,10 +14,17 @@ import math
 import ROOT
 import json
 
+# import cProfile
+# import pstats
+import time
+
 sys.path.append('../helperstuff/')
+
 from observables import observables
 from binning import binning
 from paths import path
+
+start = time.time()
 
 print('Welcome in RunCoefficients!')
 
@@ -626,6 +633,10 @@ def doGetCoeff(obs_reco, obs_gen, obs_name, obs_bins, type, obs_reco_2nd = 'None
 # -----------------------------------------------------------------------------------------
 # ------------------------------- MAIN ----------------------------------------------------
 # -----------------------------------------------------------------------------------------
+# print("Starting profiling...")
+# profiler = cProfile.Profile()
+# profiler.enable()
+
 if(opt.AC or opt.AC_ONLYACC):
     if opt.AC_ONLYACC: signals_AC_bare = ['ggH'] #Currently we use only ggH (reweighted to the sum of all production modes) to plot AC predictions
     else: signals_AC_bare = ['VBF', 'WH', 'ggH', 'ZH', 'ttH']
@@ -787,3 +798,15 @@ else:
         doGetCoeff(obs_reco, obs_gen, obs_name, obs_bins, 'ACggH', obs_reco_2nd, obs_gen_2nd, obs_name_2nd)
     else:
         doGetCoeff(obs_reco, obs_gen, obs_name, obs_bins, 'ACggH')
+
+end = time.time()
+print(f"Execution time: {end - start:.5f} seconds")
+
+# profiler.disable()
+# print("Profiling complete. Generating report...")
+# stats = pstats.Stats(profiler)
+# stats.sort_stats('cumulative')
+# stats.print_stats(30)  # Show top 30 functions
+
+# # Optional: save to file for later analysis
+# stats.dump_stats('RunCoefficients_profile.prof')
