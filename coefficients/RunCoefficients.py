@@ -2,27 +2,27 @@ import matplotlib
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 import numpy as np
-import pandas as pd
-import awkward
-import awkward as ak # spencer
+# import pandas as pd
+import awkward as ak 
 import uproot #3 as uproot
 from math import sqrt, log
 import sys,os
 import optparse
 import itertools
-import math
+# import math
 import ROOT
 import json
 
-# import cProfile
-# import pstats
-import time
+import cProfile
+import pstats
 
 sys.path.append('../helperstuff/')
 
 from observables import observables
 from binning import binning
 from paths import path
+
+import time 
 
 start = time.time()
 
@@ -40,7 +40,7 @@ def parseOptions():
     parser.add_option('',   '--obsName',  dest='OBSNAME',  type='string',default='costhetaZ1',   help='Name of the observable, supported: "inclusive", "pT4l", "eta4l", "massZ2", "nJets"')#pT4l
     parser.add_option('',   '--obsBins',  dest='OBSBINS',  type='string',default='|-1.0|-0.75|-0.50|-0.25|0.0|0.25|0.50|0.75|1.0|',   help='Bin boundaries for the diff. measurement separated by "|", e.g. as "|0|50|100|", use the defalut if empty string')#|0|30|80|200|10000|
     parser.add_option('',   '--year',  dest='YEAR',  type='string', default='2022',   help='Year -> 2016 or 2017 or 2018 or Full')
-    parser.add_option('',   '--verbose', action='store_true', dest='VERBOSE', default=True, help='print values')
+    parser.add_option('',   '--verbose', action='store_true', dest='VERBOSE', default=False, help='print values')
     parser.add_option('',   '--AC', action='store_true', dest='AC', default=False, help='AC samples')
     parser.add_option('',   '--m4lLower',  dest='LOWER_BOUND',  type='int',default=105.0,   help='Lower bound for m4l')
     parser.add_option('',   '--m4lUpper',  dest='UPPER_BOUND',  type='int',default=140.0,   help='Upper bound for m4l')
@@ -70,14 +70,14 @@ def weight(df, fail, xsec, gen, lumi, additional = None):
     #Coefficient to calculate weights for histograms
     coeff = (lumi * 1000 * xsec) / gen
     #Gen
-    weight_gen = np.sign(df.genHEPMCweight)# * df.PUWeight
+    weight_gen = np.sign(df['genHEPMCweight'])# * df.PUWeight
     weight_histo_gen = weight_gen * coeff
     #Reco
     if(fail == False):
         if not opt.AC_ONLYACC: #AC samples are ReReco, there is no SFcorr for ReReco
-            weight_reco = np.sign(df.genHEPMCweight) * df.PUWeight * df.dataMCWeight #* df.L1prefiringWeight * df.SFcorr
+            weight_reco = np.sign(df['genHEPMCweight']) * df['PUWeight'] * df['dataMCWeight'] #* df['L1prefiringWeight'] * df['SFcorr']
         else:
-            weight_reco = np.sign(df.genHEPMCweight) * df.PUWeight * df.dataMCWeight #* df.L1prefiringWeight * df.SFcorr
+            weight_reco = np.sign(df['genHEPMCweight']) * df['PUWeight'] * df['dataMCWeight'] #* df['L1prefiringWeight'] * df['SFcorr']
         weight_histo_reco = weight_reco * coeff
     elif(fail == True):
         weight_reco = 0
@@ -88,10 +88,10 @@ def weight(df, fail, xsec, gen, lumi, additional = None):
     df['weight_histo_gen'] = weight_histo_gen #Powheg
     df['weight_histo_reco'] = weight_histo_reco #Powheg
     if additional == 'ggH': #Applies extra NNLOPS weights for gluon-gluon fusion Higgs production
-        weight_gen_NNLOPS = weight_gen * df.ggH_NNLOPS_weight
-        weight_reco_NNLOPS = weight_reco * df.ggH_NNLOPS_weight
-        weight_histo_gen_NNLOPS = weight_histo_gen * df.ggH_NNLOPS_weight
-        weight_histo_reco_NNLOPS = weight_histo_reco * df.ggH_NNLOPS_weight
+        weight_gen_NNLOPS = weight_gen * df['ggH_NNLOPS_weight']
+        weight_reco_NNLOPS = weight_reco * df['ggH_NNLOPS_weight']
+        weight_histo_gen_NNLOPS = weight_histo_gen * df['ggH_NNLOPS_weight']
+        weight_histo_reco_NNLOPS = weight_histo_reco * df['ggH_NNLOPS_weight']
         df['weight_gen_NNLOPS'] = weight_gen_NNLOPS #NNLOPS (only ggH)
         df['weight_reco_NNLOPS'] = weight_reco_NNLOPS #NNLOPS (only ggH)
         df['weight_histo_gen_NNLOPS'] = weight_histo_gen_NNLOPS #NNLOPS (only ggH)
@@ -129,15 +129,18 @@ def xsecs(year):
         #total_weight = d_sig[signal].pandas.df('overallEventWeight').overallEventWeight
         #puweight = d_sig[signal].pandas.df('PUWeight').PUWeight
         #genweight = d_sig[signal].pandas.df('genHEPMCweight').genHEPMCweight
-        if 'ggH' in signal:  df = d_sig[signal].arrays(['overallEventWeight', 'PUWeight', 'genHEPMCweight', 'ggH_NNLOPS_weight'], library="pd") # spencer
-        else: df = d_sig[signal].arrays(['overallEventWeight', 'PUWeight', 'genHEPMCweight'], library="pd") # spencer
-        total_weight = df['overallEventWeight'] # spencer
-        puweight = df['PUWeight'] # spencer
-        genweight = df['genHEPMCweight'] # spencer
+        if 'ggH' in signal:  
+            df = d_sig[signal].arrays(['overallEventWeight', 'PUWeight', 'genHEPMCweight', 'ggH_NNLOPS_weight'], library="ak") 
+        else: 
+            df = d_sig[signal].arrays(['overallEventWeight', 'PUWeight', 'genHEPMCweight'], library="ak") 
+        
+        total_weight = df['overallEventWeight'] 
+        puweight = df['PUWeight'] 
+        genweight = df['genHEPMCweight'] 
 
         if 'ggH' in signal:
             #nnlops = d_sig[signal].pandas.df('ggH_NNLOPS_weight').ggH_NNLOPS_weight
-            nnlops = df['ggH_NNLOPS_weight'] # spencer
+            nnlops = df['ggH_NNLOPS_weight'] 
             xsec = total_weight/(puweight*genweight*nnlops)
 
         else:
@@ -149,80 +152,154 @@ def xsecs(year):
 #Computes cross-section values for each signal sample using:
 #xsec = sum of overall weights / (PUWeight * genHEPMCweight * (ggH weight if applicable) )
  
-    
+def add_fin_state_reco(Z1Flav, Z2Flav):
+    i, j = np.abs(Z1Flav), np.abs(Z2Flav)
 
-def add_fin_state_reco(i, j):
-    # fin = 'other'
-    if abs(i) == 121 and abs(j) == 121:
-        fin = '4e'
-    elif abs(i) == 169 and abs(j) == 169:
-        fin = '4mu'
-    elif (abs(i) == 121 and abs(j) == 169) or (abs(i) == 169 and abs(j) == 121):
-        fin = '2e2mu'
-    elif (abs(i) == 225 and abs(j) == 169) or (abs(i) == 169 and abs(j) == 225):
-        fin = '2tau2mu'
-    elif (abs(i) == 225 and abs(j) == 121) or (abs(i) == 121 and abs(j) == 225):
-        fin = '2tau2e'
-    elif abs(i) == 225 and abs(j) == 225:
-        fin = '4tau'
-    elif abs(i) == 0 and abs(j) == 0:
-        fin = 'other'
-    return fin
-#Determines the reconstructed final state of an event based on Z1 and Z2 flavors (e.g., 4e, 4mu, 2e2mu, etc).
+    fin = ak.zeros_like(i, dtype=np.int32)
 
-def add_fin_state_gen(lepId, Hindex, number):
-    if (Hindex[0]==99) | (Hindex[1]==99) | (Hindex[2]==99) | (Hindex[3]==99):
-        return 'other'
-    if (abs(lepId[Hindex[0]])==11) & (abs(lepId[Hindex[2]])==11):
-        fin = '4e'
-    elif (abs(lepId[Hindex[0]])==13) & (abs(lepId[Hindex[2]])==13):
-        fin = '4mu'
-    elif ((abs(int(lepId[Hindex[0]]))==11) & (abs(int(lepId[Hindex[2]]))==13)) | ((abs(int(lepId[Hindex[0]]))==13) & (abs(int(lepId[Hindex[2]]))==11)):
-        fin = '2e2mu'
-    else:
-        fin = 'other'
+    # fin = ak.where((i == 0) & (j == 0), 0, fin)  # other
+    fin = ak.where((i == 121) & (j == 121), 1, fin)  # 4e
+    fin = ak.where((i == 169) & (j == 169), 2, fin)  # 4mu
+    fin = ak.where(((i == 121) & (j == 169)) | ((i == 169) & (j == 121)), 3, fin)  # 2e2mu
+    fin = ak.where(((i == 225) & (j == 169)) | ((i == 169) & (j == 225)), 4, fin)  # 2tau2mu
+    fin = ak.where(((i == 225) & (j == 121)) | ((i == 121) & (j == 225)), 5, fin)  # 2tau2e
+    fin = ak.where((i == 225) & (j == 225), 6, fin)  # 4tau
+
+    mapping = ak.Array(["other", "4e", "4mu", "2e2mu", "2tau2mu", "2tau2e", "4tau"])
+    fin = mapping[fin]
+
     return fin
-#Determines generator-level final state using lepton IDs and Higgs decay product indices.
-def add_fin_state_gen_out(ZdauId,event):
-    if (abs(ZdauId[0])==11) and (abs(ZdauId[1])==11):
-        fin = '4e'
-    elif (abs(ZdauId[0])==13) and (abs(ZdauId[1])==13):
-        fin = '4mu'
-    elif ((abs(ZdauId[0])==11) and (abs(ZdauId[1])==13)) or ((abs(ZdauId[0])==13) and (abs(ZdauId[1])==11)):
-        fin = '2e2mu'
-    else:
-        fin = 'other'
+# Determines the reconstructed final state of an event based on Z1 and Z2 flavors (e.g., 4e, 4mu, 2e2mu, etc).
+
+def add_fin_state_gen(lepId, Hindex):
+    fin = -ak.ones_like(lepId[:,0], dtype=np.int32)
+
+    lepId = np.abs(lepId)
+    Hindex = np.abs(Hindex)
+
+    # Check for invalid indices
+    # invalid_mask = (Hindex[:,0] == 99) | (Hindex[:,1] == 99) | (Hindex[:,2] == 99) | (Hindex[:,3] == 99)
+    invalid_mask = ak.any(Hindex == 99, axis=1)
+
+    # Replace 99 with a safe index (e.g. 0) so no out-of-bounds
+    safe_Hindex = ak.where(Hindex == 99, -1, Hindex)
+
+    row_idx = ak.local_index(lepId, axis=0)
+
+    lep_0 = lepId[row_idx, safe_Hindex[:,0]]
+    lep_2 = lepId[row_idx, safe_Hindex[:,2]]
+
+    # Set final states
+    fin = ak.where(invalid_mask, 0, fin)  # other
+    fin = ak.where((lep_0 == 11) & (lep_2 == 11) & ~invalid_mask, 1, fin)  # 4e
+    fin = ak.where((lep_0 == 13) & (lep_2 == 13) & ~invalid_mask, 2, fin)  # 4mu
+    fin = ak.where((((lep_0 == 11) & (lep_2 == 13)) | ((lep_0 == 13) & (lep_2 == 11))) & ~invalid_mask, 3, fin)  # 2e2mu
+
+    mapping = ak.Array(["other", "4e", "4mu", "2e2mu"])
+    fin = mapping[fin]
+
     return fin
-#Alternative gen-level final state classifier using Z daughters (simplified version, not using Higgs indices).
+# Determines generator-level final state using lepton IDs and Higgs decay product indices.
+
+def add_fin_state_gen_out(ZdauId):
+    fin = ak.zeros_like(ZdauId[:,0], dtype=np.int32)
+
+    ZdauId_0 = abs(ZdauId[:,0])
+    ZdauId_1 = abs(ZdauId[:,1])
+
+    # fin = ak.where((((abs(ZdauId_0)!=11) | (abs(ZdauId_1)!=13)) | ((abs(ZdauId_0)!=13) | (abs(ZdauId_1)!=11))), 0, fin)  # other
+    fin = ak.where((abs(ZdauId_0)==11) & (abs(ZdauId_1)==11), 1, fin)  # 4e
+    fin = ak.where((abs(ZdauId_0)==13) & (abs(ZdauId_1)==13), 2, fin)  # 4mu
+    fin = ak.where((((abs(ZdauId_0)==11) & (abs(ZdauId_1)==13)) | ((abs(ZdauId_0)==13) & (abs(ZdauId_1)==11))), 3, fin)  # 2e2mu
+
+    mapping = ak.Array(["other", "4e", "4mu", "2e2mu"])
+    fin = mapping[fin]
+    return fin
+# Alternative gen-level final state classifier using Z daughters (simplified version, not using Higgs indices).
 
 def add_fin_state_gen_out_ZH(ZdauId,momId):
-    if ((abs(ZdauId[0])==11) and (abs(ZdauId[1])==11) and (momId[0]==25) and (momId[1]==25)) or ((abs(ZdauId[0])==11) and (abs(ZdauId[2])==11) and (momId[0]==25) and (momId[2]==25)) or ((abs(ZdauId[1])==11) and (abs(ZdauId[2])==11) and (momId[1]==25) and (momId[2]==25)):
-        fin = '4e'
-    elif ((abs(ZdauId[0])==13) and (abs(ZdauId[1])==13) and (momId[0]==25) and (momId[1]==25)) or ((abs(ZdauId[0])==13) and (abs(ZdauId[2])==13)&(momId[0]==25) and (momId[2]==25)) or ((abs(ZdauId[1])==13) and (abs(ZdauId[2])==13) and (momId[1]==25) and (momId[2]==25)):
-        fin = '4mu'
-    elif (momId[0]==25 and (ZdauId[0]==11 or ZdauId[0]==13) and momId[1]==25 and (ZdauId[1]==11 or ZdauId[1]==13) and (ZdauId[0]!=ZdauId[1])) or (momId[0]==25 and (ZdauId[0]==11 or ZdauId[0]==13) and momId[2]==25 and (ZdauId[2]==11 or ZdauId[2]==13) and (ZdauId[0]!=ZdauId[2])) or (momId[1]==25 and (ZdauId[1]==11 or ZdauId[1]==13) and momId[2]==25 and (ZdauId[2]==11 or ZdauId[2]==13) and (ZdauId[1]!=ZdauId[2])):
-        fin = '2e2mu'
-    else:
-        fin = 'other'
+    fin = ak.zeros_like(ZdauId[:,0])
+
+    ZdauId_0 = np.abs(ZdauId[:,0])
+    ZdauId_1 = np.abs(ZdauId[:,1])
+    ZdauId_2 = np.abs(ZdauId[:,2])
+
+    momId_0 = momId[:,0]
+    momId_1 = momId[:,1]
+    momId_2 = momId[:,2]
+
+    fin = ak.where(((momId_0==25) & (momId_1==25) & (ZdauId_0==11) & (ZdauId_1==11)) |
+                   ((momId_0==25) & (momId_2==25) & (ZdauId_0==11) & (ZdauId_2==11)) |
+                   ((momId_1==25) & (momId_2==25) & (ZdauId_1==11) & (ZdauId_2==11)), 1, fin)  # 4e
+
+    fin = ak.where(((momId_0==25) & (momId_1==25) & (ZdauId_0==13) & (ZdauId_1==13)) |
+                   ((momId_0==25) & (momId_2==25) & (ZdauId_0==13) & (ZdauId_2==13)) |
+                   ((momId_1==25) & (momId_2==25) & (ZdauId_1==13) & (ZdauId_2==13)), 2, fin)  # 4mu
+ 
+    fin = ak.where(((momId_0==25) & (momId_1==25) & (ZdauId_0!=ZdauId_1) & ((ZdauId_0==11) | (ZdauId_0==13))) & (((ZdauId_1==11) | (ZdauId_1==13))) |
+                   ((momId_0==25) & (momId_2==25) & (ZdauId_0!=ZdauId_2) & ((ZdauId_0==11) | (ZdauId_0==13))) & (((ZdauId_2==11) | (ZdauId_2==13))) |
+                   ((momId_1==25) & (momId_2==25) & (ZdauId_1!=ZdauId_2) & ((ZdauId_1==11) | (ZdauId_1==13))) & (((ZdauId_2==11) | (ZdauId_2==13))), 3, fin) # 2e2mu
+
+    mapping = ak.Array(["other", "4e", "4mu", "2e2mu"])
+    fin = mapping[fin]
+
     return fin
-#Tailored version of gen final state classification for ZH samples, requires mother ID check (ensure daughters came from Higgs).
+# Tailored version of gen final state classification for ZH samples, requires mother ID check (ensure daughters came from Higgs).
 
 def add_cuth4l_gen(momMomId,Hindex):
-    if (int(Hindex[0])==99) | (int(Hindex[1])==99) | (int(Hindex[2])==99) | (int(Hindex[3])==99):
-        return False
-    if int(momMomId[int(Hindex[0])])==25 and int(momMomId[int(Hindex[1])])==25 and int(momMomId[int(Hindex[2])])==25 and int(momMomId[int(Hindex[3])])==25:
-        return True
-    else:
-        return False
+    output = ak.zeros_like(momMomId[:,0], dtype=np.int32)
+
+    invalid_mask = ak.any(Hindex == 99, axis=1)  
+    safe_Hindex = ak.where(Hindex == 99, -1, Hindex)
+
+    row_idx = ak.local_index(momMomId, axis=0)
+
+    momMomId_0 = momMomId[row_idx, safe_Hindex[:,0]]
+    momMomId_1 = momMomId[row_idx, safe_Hindex[:,1]]
+    momMomId_2 = momMomId[row_idx, safe_Hindex[:,2]]
+    momMomId_3 = momMomId[row_idx, safe_Hindex[:,3]]
+
+    output = ak.where((momMomId_0 == 25) & (momMomId_1 == 25) & (momMomId_2 == 25) & (momMomId_3 == 25) & (~invalid_mask), 1, output)
+
+    mapping = ak.Array([False, True])
+    output = mapping[output]
+
+    return output
 #Checks if all four generator-level leptons are descendants of a Higgs boson (i.e., if it’s a true H→ZZ→4l decay).
 
-def add_cuth4l_reco(Hindex,genIndex,momMomId,momId): #(Hindex, momMomId,momId):
-    if (Hindex[0]==99) | (Hindex[1]==99) | (Hindex[2]==99) | (Hindex[3]==99) | (int(Hindex[0])==-1) | (int(Hindex[1])==-1) | (int(Hindex[2])==-1) | (int(Hindex[3])==-1):
-        return False
-    if ((genIndex[Hindex[0]]>-0.5)*momMomId[max(0,genIndex[Hindex[0]])]==25) and ((genIndex[Hindex[0]]>-0.5)*momId[max(0,genIndex[Hindex[0]])]==23) and ((genIndex[Hindex[1]]>-0.5)*momMomId[max(0,genIndex[Hindex[1]])]==25) and ((genIndex[Hindex[1]]>-0.5)*momId[max(0,genIndex[Hindex[1]])]==23) and ((genIndex[Hindex[2]]>-0.5)*momMomId[max(0,genIndex[Hindex[2]])]==25) and ((genIndex[Hindex[2]]>-0.5)*momId[max(0,genIndex[Hindex[2]])]==23) and ((genIndex[Hindex[3]]>-0.5)*momMomId[max(0,genIndex[Hindex[3]])]==25) and ((genIndex[Hindex[3]]>-0.5)*momId[max(0,genIndex[Hindex[3]])]==23):
-        return True
-    else:
-        return False
+def add_cuth4l_reco(Hindex, genIndex, momMomId, momId):
+    invalid_mask = ak.any((Hindex == 99) | (Hindex == -1), axis=1) | ak.any(genIndex < 0, axis=1)
+    safe_Hindex = ak.where((Hindex == 99) | (Hindex == -1), 0, Hindex)
+    
+    row_idx = ak.local_index(genIndex, axis=0)
+    
+    genIdx_0 = genIndex[row_idx, safe_Hindex[:,0]]
+    genIdx_1 = genIndex[row_idx, safe_Hindex[:,1]]
+    genIdx_2 = genIndex[row_idx, safe_Hindex[:,2]]
+    genIdx_3 = genIndex[row_idx, safe_Hindex[:,3]]
+
+    safe_genIdx_0 = ak.where((genIdx_0 < 0) | (genIdx_0 == 99), 0, genIdx_0)
+    safe_genIdx_1 = ak.where((genIdx_1 < 0) | (genIdx_1 == 99), 0, genIdx_1)
+    safe_genIdx_2 = ak.where((genIdx_2 < 0) | (genIdx_2 == 99), 0, genIdx_2)
+    safe_genIdx_3 = ak.where((genIdx_3 < 0) | (genIdx_3 == 99), 0, genIdx_3)
+
+    momMom_0 = momMomId[row_idx, safe_genIdx_0]
+    momMom_1 = momMomId[row_idx, safe_genIdx_1]
+    momMom_2 = momMomId[row_idx, safe_genIdx_2]
+    momMom_3 = momMomId[row_idx, safe_genIdx_3]
+    
+    mom_0 = momId[row_idx, safe_genIdx_0]
+    mom_1 = momId[row_idx, safe_genIdx_1]
+    mom_2 = momId[row_idx, safe_genIdx_2]
+    mom_3 = momId[row_idx, safe_genIdx_3]
+    
+    all_valid = ((genIdx_0 > -0.5) & (momMom_0 == 25) & (mom_0 == 23) &
+                 (genIdx_1 > -0.5) & (momMom_1 == 25) & (mom_1 == 23) &
+                 (genIdx_2 > -0.5) & (momMom_2 == 25) & (mom_2 == 23) &
+                 (genIdx_3 > -0.5) & (momMom_3 == 25) & (mom_3 == 23) &
+                 (~invalid_mask))
+
+    return all_valid
 #Checks if all reconstructed leptons originated from a Z that came from a Higgs (via gen association).
 
 # Get the "number" of MC events to divide the weights
@@ -231,7 +308,7 @@ def generators(year):
     for signal in signals_original:
         fname = path['eos_path_sig']+"MC/"+year+"/"+signal+"/ZZ4lAnalysis_SKIMMED.root"
         #gen_sig[signal] = uproot.open(fname)["candTree/Counter"].array()[0]
-        gen_sig[signal] = uproot.open(fname)["Counters"].values()[39] # spencer 
+        gen_sig[signal] = uproot.open(fname)["Counters"].values()[39]  
         print("Counters is: ", gen_sig[signal])
     return gen_sig
 #Retrieves the number of generated events from a special histogram (Counters) in the ROOT file. This number is needed to normalize event weights.
@@ -240,9 +317,12 @@ def createDataframe(d_sig,fail,gen,xsec,signal,lumi,obs_reco,obs_gen,obs_reco_2n
     b_sig = ['EventNumber','GENmass4l', 'GENlep_id', 'GENlep_MomId',
              'GENlep_MomMomId', 'GENlep_Hindex', 'GENZ_DaughtersId',
              'GENZ_MomId', 'passedFiducial', 'genHEPMCweight', 'PUWeight']
-    if (obs_gen != 'GENmass4l'): b_sig.append(obs_gen)
-    if (obs_gen_2nd!='None'): b_sig.append(obs_gen_2nd)
-    if 'ggH' in signal and not opt.AC_ONLYACC: b_sig.append('ggH_NNLOPS_weight') #Additional entry for the weight in case of ggH
+    if (obs_gen != 'GENmass4l'): 
+        b_sig.append(obs_gen)
+    if (obs_gen_2nd!='None'): 
+        b_sig.append(obs_gen_2nd)
+    if 'ggH' in signal and not opt.AC_ONLYACC: 
+        b_sig.append('ggH_NNLOPS_weight') #Additional entry for the weight in case of ggH
     if not fail:
         b_sig.extend(['ZZMass', 'Z1Flav', 'Z2Flav', 'dataMCWeight', 'overallEventWeight', 'lep_genindex', 'lep_Hindex'])
                       # 'L1prefiringWeight','dataMCWeight', 'trigEffWeight'])
@@ -251,18 +331,20 @@ def createDataframe(d_sig,fail,gen,xsec,signal,lumi,obs_reco,obs_gen,obs_reco_2n
         if (obs_reco_2nd!='None'): b_sig.append(obs_reco_2nd)
         
     #df = d_sig.pandas.df(b_sig, flatten = False)
-    df = d_sig.arrays(b_sig, library="pd") # spencer
+    df = d_sig.arrays(b_sig, library="ak") 
 
-    if not fail: # spencer
-        df['ZZMass'] = ak.flatten(df['ZZMass'], axis=-1) # spencer
-        df['Z1Flav'] = ak.flatten(df['Z1Flav'], axis=-1) # spencer
-        df['Z2Flav'] = ak.flatten(df['Z2Flav'], axis=-1) # spencer
-        df['dataMCWeight'] = ak.flatten(df['dataMCWeight'], axis=-1) # spencer
-        df['overallEventWeight'] = ak.flatten(df['overallEventWeight'], axis=-1) # spencer
-        df['lep_genindex'] = df['lep_genindex'].tolist() # spencer
-        df['lep_Hindex'] = df['lep_Hindex'].tolist() # spencer
-        if (obs_reco != 'ZZMass'): df[obs_reco] = ak.flatten(df[obs_reco], axis=-1) # spencer
-        if (obs_reco_2nd!='None'): df[obs_reco_2nd] = ak.flatten(df[obs_reco_2nd], axis=-1) # spencer
+    if not fail: 
+        df['ZZMass'] = ak.flatten(df['ZZMass'], axis=-1) 
+        df['Z1Flav'] = ak.flatten(df['Z1Flav'], axis=-1) 
+        df['Z2Flav'] = ak.flatten(df['Z2Flav'], axis=-1) 
+        df['dataMCWeight'] = ak.flatten(df['dataMCWeight'], axis=-1) 
+        df['overallEventWeight'] = ak.flatten(df['overallEventWeight'], axis=-1) 
+        # df['lep_genindex'] = df['lep_genindex'].tolist() 
+        # df['lep_Hindex'] = df['lep_Hindex'].tolist() 
+        if (obs_reco != 'ZZMass'): 
+            df[obs_reco] = ak.flatten(df[obs_reco], axis=-1) 
+        if (obs_reco_2nd!='None'): 
+            df[obs_reco_2nd] = ak.flatten(df[obs_reco_2nd], axis=-1) 
         
     if fail: #Negative branches for failed events (it is useful when creating fiducial pandas)
         df['ZZMass'] = -1
@@ -271,9 +353,9 @@ def createDataframe(d_sig,fail,gen,xsec,signal,lumi,obs_reco,obs_gen,obs_reco_2n
         df['dataMCWeight'] = -1
         df['overallEventWeight'] = -1
         #df['lep_genindex'] = -1 
-        df['lep_genindex'] = [[-1, -1, -1, -1]] * len(df) # spencer
+        df['lep_genindex'] = [[-1, -1, -1, -1]] * len(df) 
         #df['lep_Hindex'] = -1 
-        df['lep_Hindex'] = [[-1, -1, -1, -1]] * len(df)	# spencer
+        df['lep_Hindex'] = [[-1, -1, -1, -1]] * len(df)	
         # df['L1prefiringWeight'] = -1
         # df['trigEffWeight'] = -1
         if (obs_reco != 'ZZMass'): df[obs_reco] = -1
@@ -284,23 +366,22 @@ def createDataframe(d_sig,fail,gen,xsec,signal,lumi,obs_reco,obs_gen,obs_reco_2n
     if opt.AC_ONLYACC:
         df['ggH_NNLOPS_weight'] = 1 #Set to 1 for ggH, in CJLST ntuple the values is always the same (PERHAPS TO BE UNDERSTOOD)
     if not fail:
-        df['FinState_reco'] = [add_fin_state_reco(i, j) for i,j in zip(df.Z1Flav, df.Z2Flav)]
+        df['FinState_reco'] = add_fin_state_reco(df['Z1Flav'], df['Z2Flav'])
     elif fail:
         df['FinState_reco'] = 'fail'
         
     #df['FinState_gen'] = [add_fin_state_gen(row[0],row[1],row[2]) for row in df[['GENlep_id', 'GENlep_Hindex', 'EventNumber']].values]
-    df['FinState_gen'] = [add_fin_state_gen(list(row[0]), list(row[1]), row[2]) for row in zip(df['GENlep_id'], df['GENlep_Hindex'], df['EventNumber'])] # spencer
+    df['FinState_gen'] = add_fin_state_gen(df['GENlep_id'], df['GENlep_Hindex'])
     
     if not 'ZH' in signal:
-        df['FinState_gen_out'] = [add_fin_state_gen_out(i,j) for i,j in zip(df.GENZ_DaughtersId,df.EventNumber)]
+        df['FinState_gen_out'] = add_fin_state_gen_out(df['GENZ_DaughtersId'])
     else:
-        df['FinState_gen_out'] = [add_fin_state_gen_out_ZH(i,j) for i,j in zip(df.GENZ_DaughtersId,df.GENZ_MomId)]
-        
-    df['cuth4l_gen'] = [add_cuth4l_gen(i,j) for i,j in zip(df.GENlep_MomMomId,df.GENlep_Hindex)]
-    if not fail:
+        df['FinState_gen_out'] = add_fin_state_gen_out_ZH(df['GENZ_DaughtersId'], df['GENZ_MomId'])
 
+    df['cuth4l_gen'] = add_cuth4l_gen(df['GENlep_MomMomId'], df['GENlep_Hindex'])
+    if not fail:
         #df['cuth4l_reco'] = [add_cuth4l_reco(row[0],row[1],row[2],row[3]) for row in df[['lep_Hindex','lep_genindex','GENlep_MomMomId','GENlep_MomId']].values]
-        df['cuth4l_reco'] = [add_cuth4l_reco(list(row[0]), list(row[1]), list(row[2]), list(row[3])) for row in zip(df['lep_Hindex'], df['lep_genindex'], df['GENlep_MomMomId'], df['GENlep_MomId'])] # spencer
+        df['cuth4l_reco'] = add_cuth4l_reco(df['lep_Hindex'], df['lep_genindex'], df['GENlep_MomMomId'], df['GENlep_MomId'])
         
     elif fail:
         df['cuth4l_reco'] = False
@@ -310,7 +391,7 @@ def createDataframe(d_sig,fail,gen,xsec,signal,lumi,obs_reco,obs_gen,obs_reco_2n
         df = weight(df, fail, xsec, gen, lumi)
     else:
         df = weight(df, fail, xsec, gen, lumi, 'ggH')
-        df = df.drop(columns=['ggH_NNLOPS_weight'])
+        # df = df.drop(columns=['ggH_NNLOPS_weight'])
 
     return df
 #Central function to:
@@ -373,14 +454,14 @@ def skim_df(year, doubleDiff):
             frames.append(d_df_sig[signal])
         else:
             d_skim_sig[signal] = d_df_sig[signal]
-    if frames: d_skim_sig['WH1'+signal[len(signal)-2]+signal[len(signal)-1]] = pd.concat(frames)
+    if frames: d_skim_sig['WH1'+signal[len(signal)-2]+signal[len(signal)-1]] = ak.concatenate(frames)
     frames = []
     for signal in signals_original:
         if ('WplusH1' in signal) or ('WminusH1' in signal):
             frames.append(d_df_sig_failed[signal])
         else:
             d_skim_sig_failed[signal] = d_df_sig_failed[signal]
-    if frames: d_skim_sig_failed['WH1'+signal[len(signal)-2]+signal[len(signal)-1]] = pd.concat(frames)
+    if frames: d_skim_sig_failed['WH1'+signal[len(signal)-2]+signal[len(signal)-1]] = ak.concatenate(frames)
     print('%s SKIMMED df CREATED' %year)
     return d_skim_sig, d_skim_sig_failed
 
@@ -427,6 +508,62 @@ def getCoeff(channel, m4l_low, m4l_high, obs_reco, obs_gen, obs_bins, recobin, g
         elif type=='fullNNLOPS' and not 'ggH' in signal: # In case of fullNNLOPS we are interested in ggH125 only
             continue
 
+        obs_gen_col = datafr[obs_gen]
+        obs_reco_col = datafr[obs_reco]
+        
+        if doubleDiff:
+            obs_gen_2nd_col = datafr[obs_gen_2nd]
+            obs_reco_2nd_col = datafr[obs_reco_2nd]
+        
+        # Selections (in case of Dcp - always 1D - we do not use the absolute value)
+        cutobs_reco = (obs_reco_col >= obs_reco_low) & (obs_reco_col < obs_reco_high)
+        if (obs_name=='Dcp'): 
+            cutobs_reco = (obs_reco_col >= obs_reco_low) & (obs_reco_col < obs_reco_high)
+            # cutobs_reco &= (datafr['Z2Mass'] < 60)
+
+        cutobs_gen = (obs_gen_col >= obs_gen_low) & (obs_gen_col < obs_gen_high)
+        if (obs_name=='Dcp'): 
+            cutobs_gen = (obs_gen_col >= obs_gen_low) & (obs_gen_col < obs_gen_high)
+            
+        if doubleDiff:
+            cutobs_reco &= (obs_reco_2nd_col >= obs_reco_2nd_low) & (obs_reco_2nd_col < obs_reco_2nd_high)
+            cutobs_gen &= (obs_gen_2nd_col >= obs_gen_2nd_low) & (obs_gen_2nd_col < obs_gen_2nd_high)
+            # cutobs_gen &= (datafr['GENmassZ2'] < 60)
+
+        cutobs_gen_otherfid = ((obs_gen_col >= obs_gen_lowest) & (obs_gen_col < obs_gen_low)) | ((obs_gen_col >= obs_gen_high) & (obs_gen_col <= obs_gen_highest))
+        if (obs_name=='Dcp'): 
+            cutobs_gen_otherfid = ((obs_gen_col >= obs_gen_lowest) & (obs_gen_col < obs_gen_low)) | ((obs_gen_col >= obs_gen_high) & (obs_gen_col <= obs_gen_highest))
+        if doubleDiff:
+            cutobs_gen_otherfid |= ((obs_gen_2nd_col >= obs_gen_2nd_lowest) & (obs_gen_2nd_col < obs_gen_2nd_low)) | ((obs_gen_2nd_col >= obs_gen_2nd_high) & (obs_gen_2nd_col <= obs_gen_2nd_highest))
+
+        GENmass4l_col = datafr['GENmass4l']
+        cuth4l_gen_col = datafr['cuth4l_gen']
+        cuth4l_reco_col = datafr['cuth4l_reco']
+        FinState_gen_col = datafr['FinState_gen']
+        FinState_reco_col = datafr['FinState_reco']
+        passedFiducial_col = datafr['passedFiducial']
+        ZZMass_col = datafr['ZZMass']
+        FinState_gen_out_col = datafr['FinState_gen_out']
+
+        cutm4l_gen = (GENmass4l_col > m4l_low) & (GENmass4l_col < m4l_high)
+        cutnotm4l_gen = (GENmass4l_col <= m4l_low) | (GENmass4l_col >= m4l_high)
+        cuth4l_gen =cuth4l_gen_col == True
+        cutnoth4l_gen =cuth4l_gen_col == False
+        cuth4l_reco = cuth4l_reco_col == True
+        cutnoth4l_reco = cuth4l_reco_col == False
+        passedFullSelection = FinState_reco_col != 'fail'
+        passedFiducialSelection = passedFiducial_col == True
+        notPassedFiducialSelection = passedFiducial_col == False
+
+        if channel != '4l':
+            cutm4l_reco = (ZZMass_col > m4l_low) & (ZZMass_col < m4l_high) & (FinState_reco_col == channel)
+            cutchan_gen = FinState_gen_col == channel
+            cutchan_gen_out = FinState_gen_out_col == channel
+        else:
+            cutm4l_reco = (ZZMass_col > m4l_low) & (ZZMass_col < m4l_high)
+            cutchan_gen = (FinState_gen_col == '2e2mu') | (FinState_gen_col == '4e') | (FinState_gen_col == '4mu')
+            cutchan_gen_out = (FinState_gen_out_col == '2e2mu') | (FinState_gen_out_col == '4e') | (FinState_gen_out_col == '4mu')
+
         if doubleDiff:
             processBin = signal+'_'+channel+'_'+obs_name+'_'+obs_name_2nd+'_genbin'+str(genbin)+'_recobin'+str(recobin)
         else:
@@ -438,43 +575,12 @@ def getCoeff(channel, m4l_low, m4l_high, obs_reco, obs_gen, obs_bins, recobin, g
             processBin = signal+'_NNLOPS_'+channel+'_'+obs_name+'_'+obs_name_2nd+'_genbin'+str(genbin)+'_recobin'+str(recobin)
 
 
-        # Selections (in case of Dcp - always 1D - we do not use the absolute value)
-        cutobs_reco = (datafr[obs_reco] >= obs_reco_low) & (datafr[obs_reco] < obs_reco_high)
-        if (obs_name=='Dcp'): cutobs_reco = (datafr[obs_reco] >= obs_reco_low) & (datafr[obs_reco] < obs_reco_high)
-        #cutobs_reco &= (datafr['Z2Mass'] < 60)
-        cutobs_gen = (datafr[obs_gen] >= obs_gen_low) & (datafr[obs_gen] < obs_gen_high)
-        if (obs_name=='Dcp'): cutobs_gen = (datafr[obs_gen] >= obs_gen_low) & (datafr[obs_gen] < obs_gen_high)
-        if doubleDiff:
-            cutobs_reco &= (datafr[obs_reco_2nd] >= obs_reco_2nd_low) & (datafr[obs_reco_2nd] < obs_reco_2nd_high)
-            cutobs_gen &= (datafr[obs_gen_2nd] >= obs_gen_2nd_low) & (datafr[obs_gen_2nd] < obs_gen_2nd_high)
-        #cutobs_gen &= (datafr['GENmassZ2'] < 60)
-
-        cutobs_gen_otherfid = ((datafr[obs_gen] >= obs_gen_lowest) & (datafr[obs_gen] < obs_gen_low)) | ((datafr[obs_gen] >= obs_gen_high) & (datafr[obs_gen] <= obs_gen_highest))
-        if (obs_name=='Dcp'): cutobs_gen_otherfid = ((datafr[obs_gen] >= obs_gen_lowest) & (datafr[obs_gen] < obs_gen_low)) | ((datafr[obs_gen] >= obs_gen_high) & (datafr[obs_gen] <= obs_gen_highest))
-        if doubleDiff:
-            cutobs_gen_otherfid |= ((datafr[obs_gen_2nd] >= obs_gen_2nd_lowest) & (datafr[obs_gen_2nd] < obs_gen_2nd_low)) | ((datafr[obs_gen_2nd] >= obs_gen_2nd_high) & (datafr[obs_gen_2nd] <= obs_gen_2nd_highest))
-        cutm4l_gen = (datafr['GENmass4l'] > m4l_low) & (datafr['GENmass4l'] < m4l_high)
-        cutnotm4l_gen = (datafr['GENmass4l'] <= m4l_low) | (datafr['GENmass4l'] >= m4l_high)
-        cuth4l_gen = datafr['cuth4l_gen'] == True
-        cutnoth4l_gen = datafr['cuth4l_gen'] == False
-        cuth4l_reco = datafr['cuth4l_reco'] == True
-        cutnoth4l_reco = datafr['cuth4l_reco'] == False
-        passedFullSelection = datafr['FinState_reco'] != 'fail'
-        passedFiducialSelection = datafr['passedFiducial'] == True
-        notPassedFiducialSelection = datafr['passedFiducial'] == False
-        if channel != '4l':
-            cutm4l_reco = (datafr['ZZMass'] > m4l_low) & (datafr['ZZMass'] < m4l_high) & (datafr['FinState_reco'] == channel)
-            cutchan_gen = datafr['FinState_gen'] == channel
-            cutchan_gen_out = datafr['FinState_gen_out'] == channel
-        else:
-            cutm4l_reco = (datafr['ZZMass'] > m4l_low) & (datafr['ZZMass'] < m4l_high)
-            cutchan_gen = (datafr['FinState_gen'] == '2e2mu') | (datafr['FinState_gen'] == '4e') | (datafr['FinState_gen'] == '4mu')
-            cutchan_gen_out = (datafr['FinState_gen_out'] == '2e2mu') | (datafr['FinState_gen_out'] == '4e') | (datafr['FinState_gen_out'] == '4mu')
-
+        genweight_col = datafr[genweight]
+        recoweight_col = datafr[recoweight]
 
         # --------------- acceptance ---------------
-        acc_num = datafr[passedFiducialSelection & cutm4l_gen & cutobs_gen & cutchan_gen & cuth4l_gen][genweight].sum()
-        acc_den = datafr[cutchan_gen_out][genweight].sum()
+        acc_num = ak.sum(genweight_col[passedFiducialSelection & cutm4l_gen & cutobs_gen & cutchan_gen & cuth4l_gen])
+        acc_den = ak.sum(genweight_col[cutchan_gen_out])
         if acc_den>0:
             acceptance[processBin] = acc_num/acc_den
             err_acceptance[processBin] = sqrt((acceptance[processBin]*(1-acceptance[processBin]))/acc_den)
@@ -482,14 +588,16 @@ def getCoeff(channel, m4l_low, m4l_high, obs_reco, obs_gen, obs_bins, recobin, g
             acceptance[processBin] = -1.0
             err_acceptance[processBin] = -1.0
 
-
-        if type=='fullNNLOPS' or type=='ACggH': continue # In case of fullNNLOPS we are interested in acceptance only
+        # In case of fullNNLOPS, we are interested in acceptance only
+        if type=='fullNNLOPS' or type=='ACggH': 
+            continue 
 
         # --------------- EffRecoToFid ---------------
-        eff_num = datafr[cutm4l_reco & cutobs_reco & passedFullSelection & cuth4l_reco &
-                                       passedFiducialSelection & cuth4l_gen & cutm4l_gen & cutchan_gen & cutobs_gen][recoweight].sum()
-        eff_den = datafr[passedFiducialSelection & cutm4l_gen & cutobs_gen & cutchan_gen & cuth4l_gen][genweight].sum()
-        if eff_den>10:
+        eff_num = ak.sum(recoweight_col[cutm4l_reco & cutobs_reco & passedFullSelection & cuth4l_reco &
+                                       passedFiducialSelection & cuth4l_gen & cutm4l_gen & cutchan_gen & cutobs_gen])
+        eff_den = ak.sum(genweight_col[passedFiducialSelection & cutm4l_gen & cutobs_gen & cutchan_gen & cuth4l_gen])
+
+        if eff_den > 10:
             effrecotofid[processBin] = eff_num/eff_den
             if effrecotofid[processBin] == 0: effrecotofid[processBin] = 1e-06
             if (effrecotofid[processBin]*(1-effrecotofid[processBin]))/eff_den > 0:
@@ -501,15 +609,15 @@ def getCoeff(channel, m4l_low, m4l_high, obs_reco, obs_gen, obs_bins, recobin, g
             err_effrecotofid[processBin] = -1.0
 
         # --------------- outinratio ---------------
-        oir_num = datafr[cutm4l_reco & cutobs_reco & passedFullSelection & cuth4l_reco &
-                                      cutchan_gen_out & (notPassedFiducialSelection | cutnoth4l_gen | cutnotm4l_gen)][recoweight].sum()
-        oir_den_1 = datafr[cutm4l_reco & cutobs_reco & passedFullSelection & cuth4l_reco &
+        oir_num = ak.sum(recoweight_col[cutm4l_reco & cutobs_reco & passedFullSelection & cuth4l_reco &
+                                      cutchan_gen_out & (notPassedFiducialSelection | cutnoth4l_gen | cutnotm4l_gen)])
+        oir_den_1 = ak.sum(recoweight_col[cutm4l_reco & cutobs_reco & passedFullSelection & cuth4l_reco &
                                          passedFiducialSelection & cuth4l_gen & cutm4l_gen &
-                                         cutchan_gen & cutobs_gen][recoweight].sum()
-        oir_den_2 = datafr[cutm4l_reco & cutobs_reco & passedFullSelection & cuth4l_reco &
+                                         cutchan_gen & cutobs_gen])
+        oir_den_2 = ak.sum(recoweight_col[cutm4l_reco & cutobs_reco & passedFullSelection & cuth4l_reco &
                                          passedFiducialSelection & cuth4l_gen & cutm4l_gen &
-                                         cutchan_gen & cutobs_gen_otherfid][recoweight].sum()
-        if oir_den_1+oir_den_2>0:
+                                         cutchan_gen & cutobs_gen_otherfid])
+        if oir_den_1+oir_den_2 > 0:
             outinratio[processBin] = oir_num/(oir_den_1+oir_den_2)
             if (outinratio[processBin]*(1-outinratio[processBin]))/(oir_den_1+oir_den_2) > 0:
                 err_outinratio[processBin] = sqrt((outinratio[processBin]*(1-outinratio[processBin]))/(oir_den_1+oir_den_2))
@@ -520,16 +628,16 @@ def getCoeff(channel, m4l_low, m4l_high, obs_reco, obs_gen, obs_bins, recobin, g
             err_outinratio[processBin] = 0.0
 
         # --------------- wrongfrac ---------------
-        wf_num = datafr[passedFullSelection & cutm4l_reco & cutnoth4l_reco][recoweight].sum()
-        wf_den = datafr[passedFullSelection & cutm4l_reco][recoweight].sum()
+        wf_num = ak.sum(recoweight_col[passedFullSelection & cutm4l_reco & cutnoth4l_reco])
+        wf_den = ak.sum(recoweight_col[passedFullSelection & cutm4l_reco])
         if wf_den>0:
             wrongfrac[processBin] = wf_num/wf_den
         else:
             wrongfrac[processBin] = -1.0
 
         # --------------- binfrac_wrongfrac ---------------
-        binwf_num = datafr[passedFullSelection & cutm4l_reco & cutnoth4l_reco & cutobs_reco][recoweight].sum()
-        binwf_den = datafr[passedFullSelection & cutm4l_reco & cutnoth4l_reco][recoweight].sum()
+        binwf_num = ak.sum(recoweight_col[passedFullSelection & cutm4l_reco & cutnoth4l_reco & cutobs_reco])
+        binwf_den = ak.sum(recoweight_col[passedFullSelection & cutm4l_reco & cutnoth4l_reco])
         if binwf_den>0:
             binfrac_wrongfrac[processBin] = binwf_num/binwf_den
         else:
@@ -544,7 +652,7 @@ def getCoeff(channel, m4l_low, m4l_high, obs_reco, obs_gen, obs_bins, recobin, g
             print(processBin,'acc',round(acceptance[processBin],4),'eff',round(effrecotofid[processBin],4),'outinratio',round(outinratio[processBin],4), '\n')
 
 
-def doGetCoeff(obs_reco, obs_gen, obs_name, obs_bins, type, obs_reco_2nd = 'None', obs_gen_2nd = 'None', obs_name_2nd = 'None',):
+def doGetCoeff(obs_reco, obs_gen, obs_name, obs_bins, type, obs_reco_2nd = 'None', obs_gen_2nd = 'None', obs_name_2nd = 'None'):
     if obs_reco != 'ZZMass':
         chans = ['4e', '4mu', '2e2mu']
     else:
@@ -553,11 +661,16 @@ def doGetCoeff(obs_reco, obs_gen, obs_name, obs_bins, type, obs_reco_2nd = 'None
     m4l_high = opt.UPPER_BOUND
 
     nBins = len(obs_bins)
-    if not doubleDiff: nBins = len(obs_bins)-1 #In case of 1D measurement the number of bins is -1 the length of obs_bins(=bin boundaries)
-    if(opt.AC==True): add_ac = 'AC_'
-    elif(opt.AC_ONLYACC==True): add_ac = 'ACggH_'+opt.AC_HYP+'_'
-    elif opt.INTER: add_ac = '1'+opt.HYP+'_'
-    else: add_ac = ''
+    if not doubleDiff:
+        nBins = len(obs_bins)-1 # In case of 1D measurement, the number of bins is -1 the length of obs_bins(=bin boundaries)
+    if(opt.AC==True):
+        add_ac = 'AC_'
+    elif(opt.AC_ONLYACC==True):
+        add_ac = 'ACggH_'+opt.AC_HYP+'_'
+    elif opt.INTER:
+        add_ac = '1'+opt.HYP+'_'
+    else:
+        add_ac = ''
     if type=='std':
         for year in years:
             for chan in chans:
@@ -565,8 +678,10 @@ def doGetCoeff(obs_reco, obs_gen, obs_name, obs_bins, type, obs_reco_2nd = 'None
                     for genbin in range(nBins):
                         getCoeff(chan, m4l_low, m4l_high, obs_reco, obs_gen, obs_bins, recobin, genbin, obs_name, type, year, obs_reco_2nd, obs_gen_2nd, obs_name_2nd)
             # Write dictionaries
-            if doubleDiff: obs_name_dic = obs_name+'_'+obs_name_2nd
-            else: obs_name_dic = obs_name
+            if doubleDiff:
+                obs_name_dic = obs_name+'_'+obs_name_2nd
+            else:
+                obs_name_dic = obs_name
             #Fix 2016post to 2016
             if '2016post' in year:
                 year_label = '2016'
@@ -633,7 +748,8 @@ def doGetCoeff(obs_reco, obs_gen, obs_name, obs_bins, type, obs_reco_2nd = 'None
 # -----------------------------------------------------------------------------------------
 # ------------------------------- MAIN ----------------------------------------------------
 # -----------------------------------------------------------------------------------------
-# print("Starting profiling...")
+
+# print("Starting profiling")
 # profiler = cProfile.Profile()
 # profiler.enable()
 
@@ -655,8 +771,8 @@ else:
 eos_path_sig = path['eos_path_sig']
 #key = 'candTree'
 #key_failed = 'candTree_failed'
-key = 'ZZTree/candTree' # spencer
-key_failed = 'ZZTree/candTree_failed' # spencer
+key = 'ZZTree/candTree' 
+key_failed = 'ZZTree/candTree_failed' 
 
 if (opt.YEAR == '2016'): years = ['2016post']
 if (opt.YEAR == '2017'): years = ['2017']
@@ -681,7 +797,7 @@ else:
     obs_name = opt.OBSNAME
 
 #_temp = __import__('observables', globals(), locals(), ['observables'], -1)
-_temp = __import__('observables', globals(), locals(), ['observables'], 0) # spencer
+_temp = __import__('observables', globals(), locals(), ['observables'], 0) 
 
 observables = _temp.observables
 if doubleDiff:
@@ -714,7 +830,7 @@ for year in years:
     for signal in signals:
         print(year, signal)
 
-        d_sup[signal] = pd.concat([d_sig[year][signal], d_sig_failed[year][signal]], ignore_index=True, sort=True)        
+        d_sup[signal] = ak.concatenate([d_sig[year][signal], d_sig_failed[year][signal]]) # , ignore_index=True, sort=True)        
     d_sig_tot[year] = d_sup
 
 # Create dataframe FullRun2
@@ -722,7 +838,7 @@ if((opt.YEAR == 'Full') or (opt.YEAR == 'Run3') or (opt.YEAR == '2022full') or (
     d_sig_full = {}
     for signal in signals:
         frame = [d_sig_tot[year][signal] for year in years]
-        d_sig_full[signal] = pd.concat(frame, ignore_index=True, sort=True)
+        d_sig_full[signal] = ak.concatenate(frame) # , ignore_index=True, sort=True)
 else: # If I work with one year only, the FullRun2 df coincides with d_sig_tot (it is useful when fullNNLOPS is calculated)
     if opt.YEAR == '2016':
         d_sig_full = d_sig_tot[opt.YEAR+'post']
@@ -800,7 +916,8 @@ else:
         doGetCoeff(obs_reco, obs_gen, obs_name, obs_bins, 'ACggH')
 
 end = time.time()
-print(f"Execution time: {end - start:.5f} seconds")
+
+print(f"RunCoefficients completed {end - start:.5f} seconds")
 
 # profiler.disable()
 # print("Profiling complete. Generating report...")
@@ -809,4 +926,4 @@ print(f"Execution time: {end - start:.5f} seconds")
 # stats.print_stats(30)  # Show top 30 functions
 
 # # Optional: save to file for later analysis
-# stats.dump_stats('RunCoefficients_profile.prof')
+# stats.dump_stats('test_profile.prof')
