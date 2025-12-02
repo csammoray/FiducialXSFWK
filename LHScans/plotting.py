@@ -1372,7 +1372,7 @@ def StandardAxes(xaxis, yaxis, var, units):
         yaxis.SetTitle("Events / " + w_label + " " + units)
 
 
-def DrawCMSLogo(pad, cmsText, extraText, iPosX, relPosX, relPosY, relExtraDY, extraText2='', cmsTextSize=0.8):
+def DrawCMSLogo(pad, cmsText, extraText, iPosX, relPosX, relPosY, relExtraDY, extraText2='', cmsTextSize=0.8, extraTextXOffset=0.0):
     """Blah
 
     Args:
@@ -1467,7 +1467,7 @@ def DrawCMSLogo(pad, cmsText, extraText, iPosX, relPosX, relPosY, relExtraDY, ex
             latex.SetTextAlign(align_)
             latex.SetTextSize(extraTextSize * t * pad_ratio)
             latex.DrawLatex(
-                posX_, posY_ - relExtraDY * cmsTextSize * t, extraText)
+                posX_ + extraTextXOffset, posY_ - relExtraDY * cmsTextSize * t, extraText)
             if writeExtraText2:
                 latex.DrawLatex(
                     posX_, posY_ - 1.8 * relExtraDY * cmsTextSize * t, extraText2)
@@ -1478,7 +1478,7 @@ def DrawCMSLogo(pad, cmsText, extraText, iPosX, relPosX, relPosY, relExtraDY, ex
         latex.SetTextFont(extraTextFont)
         latex.SetTextSize(extraTextSize * t * pad_ratio)
         latex.SetTextAlign(align_)
-        latex.DrawLatex(posX_, posY_, extraText)
+        latex.DrawLatex(posX_ + extraTextXOffset, posY_, extraText)
 
 
 def PositionedLegend(width, height, pos, offset, horizontaloffset=None):
