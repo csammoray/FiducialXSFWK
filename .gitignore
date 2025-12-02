@@ -158,3 +158,6 @@ fit/*.txt
 impacts
 pvalues/*
 plots/*
+*.pdf
+
+.gitignore
