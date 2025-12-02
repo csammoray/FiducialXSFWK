@@ -159,5 +159,4 @@ impacts
 pvalues/*
 plots/*
 *.pdf
-
-.gitignore
+*.json
